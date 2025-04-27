@@ -1,20 +1,30 @@
-var ans = "";
-var questionMode = "sino";
+var practiceType = "sino";
 var answerMode = "number";
-var slider = '';
 var waiting = false;
 
-function checkState() {
-  questionMode = $("#practice-type-select")[0].value;
-  if (questionMode == 'sino') { 
-    $("#rangeSliderDiv").css("display", "flex");
-    $("#sigFigDiv").css("display", "flex");
-  } else {
-    $("#rangeSliderDiv").css("display", "none");
-    $("#sigFigDiv").css("display", "none");
-  }
+var answer = "";
 
-  if ($("#number-korean").is(":checked")) {
+function randInt(a, b) {
+  return Math.floor(Math.random() * (b - a + 1)) + a;
+}
+function isNumberKoreanChecked() {
+  return $("#number-korean").is(":checked");
+}
+function getSigfig() {
+  return parseInt($("#sigfig").val());
+}
+function animateElement(element, opacity, callback) {
+  $(element).animate({ opacity: opacity }, 200, callback);
+}
+function readQuestion() {
+  readAloud($("#question").text());
+}
+
+function checkState() {
+  practiceType = $("#practice-type-select")[0].value;
+  $("#rangeSliderDiv,#sigFigDiv").css("display", (practiceType == 'sino') ? "flex" : "none");
+
+  if (isNumberKoreanChecked()) {
     answerMode = "korean";
     $("#ans")[0].type = "text";
   } else {
@@ -24,21 +34,17 @@ function checkState() {
   genQuestion();
 }
 
-function randInt(a, b) {
-  return Math.floor(Math.random() * (b - a + 1)) + a;
-}
-
 function genQuestion() {
   var hangul = "";
   var number = "";
-  if (questionMode == "native") {
+  if (practiceType == "native") {
     number = randInt(0, 99);
     hangul = number_to_native(number);
     number = number.toString();
-  } else if (questionMode == "sino") {
+  } else if (practiceType == "sino") {
     var [lowBound, upperBound] = $("#rangeSlider").slider("getValue");
     var mag = randInt(lowBound, upperBound); // 1 - 11
-    var sigfig = Math.min(parseInt($("#sigfig").val()), mag); // 1 - 11
+    var sigfig = Math.min(parseInt(getSigfig()), mag); // 1 - 11
     number = (randInt(Math.pow(10, sigfig - 1), Math.pow(10, sigfig) - 1) * (Math.pow(10, mag - sigfig))).toString(); // 1 - 1e11
     hangul = number_to_sino(number);
   }
@@ -46,16 +52,16 @@ function genQuestion() {
   var questionText = "";
   if (answerMode == "number") {
     questionText = hangul;
-    ans = number;
+    answer = number;
   } else {
     questionText = number;
-    ans = hangul;
+    answer = hangul;
   }
   $("#question").text(questionText);
   $("#ans").val("").attr("disabled", false);
 
-  if (!$("#number-korean").is(":checked")) {
-    readAloud($("#question").text());
+  if (!isNumberKoreanChecked()) {
+    readQuestion();
   }
 
   $("#ans").focus();
@@ -63,55 +69,47 @@ function genQuestion() {
 
 function checkAns() {
   var correct = false;
-  if ($("#ans").val().replace(" ", "") == ans.replace(" ", "")) {
+  if ($("#ans").val().replace(" ", "") == answer.replace(" ", "")) {
     $("#correct-ans").removeClass("text-danger").addClass("text-success")
     $("#correct-ans").text("Correct!")
     correct = true;
   } else {
     $("#correct-ans").removeClass("text-success").addClass("text-danger")
     if (answerMode == "number") {
-      $("#correct-ans").text(parseInt(ans).toLocaleString());
+      $("#correct-ans").text(parseInt(answer).toLocaleString());
     } else {
-      $("#correct-ans").text(ans);
+      $("#correct-ans").text(answer);
     }
   }
   if (correct) {
     waiting = true;
-    $("#correct-ans").animate({ opacity: 1 }, 200, function () {
-      $("#main").delay(1000).animate({ opacity: 0 }, 200, function () {
+    animateElement("#correct-ans", 1, () => {
+      animateElement("#main", 0, () => {
         genQuestion();
-        $("#main").animate({ opacity: 1 }, 200, function () {
+        animateElement("#main", 1, () => {
           waiting = false;
         });
       });
-      $("#correct-ans").delay(1000).animate({ opacity: 0 }, 200);
-    })
+      animateElement("#correct-ans", 0);
+    });
   } else {
-    $("#correct-ans").animate({ opacity: 1 }, 200, function () {
+    animateElement("#correct-ans", 1, () => {
       $("#correct-ans").focus();
     });
-    if ($("#number-korean").is(":checked")) {
-      readAloud(ans);
+    if (isNumberKoreanChecked()) {
+      readAloud(answer);
     }
   }
 }
 
-function getSigfig() {
-  return parseInt($("#sigfig").val());
-}
-
 $(() => {
-  slider = $("#rangeSlider").slider();
-  slider.on('slideStop', genQuestion);
+  $("#rangeSlider").slider().on('slideStop', genQuestion);
 
-  slider = $("#tempoSlider").slider();
-  slider.on('slideStop', function () {
-    readAloud($("#question").text());
-  });
+  $("#tempoSlider").slider().on('slideStop', readQuestion);
 
   $("#sigfig").val("11");
-  $("#sigfig").on("input", function () {
-    $("#sigFigDisplay").text($("#sigfig").val());
+  $("#sigfig").on("input", () => {
+    $("#sigFigDisplay").text(getSigfig());
   });
   $("#sigfig").change(checkState);
 
@@ -122,13 +120,13 @@ $(() => {
     if (e.key == "Enter") {
       if ($("#correct-ans").hasClass("text-danger") && $("#correct-ans").css("opacity") != "0") {
         waiting = true;
-        $("#main").animate({ opacity: 0 }, 200, function () {
+        animateElement("#main", 0, () => {
           genQuestion();
-          $("#main").animate({ opacity: 1 }, 200, function () {
+          animateElement("#main", 1, () => {
             waiting = false;
           });
         });
-        $("#correct-ans").animate({ opacity: 0 }, 200);
+        animateElement("#correct-ans", 0);
       } else {
         checkAns();
       }
@@ -165,11 +163,10 @@ $(() => {
   $('#tts-select').on("change", () => {
     const index = $('#tts-select')[0].value;
     selectVoice(index);
-    readAloud($("#question").text());
+    readQuestion();
   });
 
   $("#question").click(() => {
-    readAloud($("#question").text());
-    console.log("hi");
+    readQuestion();
   })
 });
