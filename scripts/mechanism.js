@@ -5,14 +5,13 @@ var slider = '';
 var waiting = false;
 
 function checkState() {
-  if ($("#sino-native").is(":checked")) {
-    questionMode = "native";
-    $("#rangeSliderDiv").css("display", "none");
-    $("#sigFigDiv").css("display", "none");
-  } else {
-    questionMode = "sino";
+  questionMode = $("#practice-type-select")[0].value;
+  if (questionMode == 'sino') { 
     $("#rangeSliderDiv").css("display", "flex");
     $("#sigFigDiv").css("display", "flex");
+  } else {
+    $("#rangeSliderDiv").css("display", "none");
+    $("#sigFigDiv").css("display", "none");
   }
 
   if ($("#number-korean").is(":checked")) {
@@ -157,7 +156,7 @@ $(() => {
 
   checkState()
 
-  $("#sino-native").change(checkState);
+  $("#practice-type-select").change(checkState);
   $("#number-korean").change(checkState);
 
   $("#ans").focus();
