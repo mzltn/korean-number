@@ -24,6 +24,7 @@
     crossorigin="anonymous"></script>
   <script src="scripts/lang.js"></script>
   <script src="scripts/tts.js"></script>
+  <script src="scripts/clock.js"></script>
   <script src="scripts/mechanism.js"></script>
 </head>
 
@@ -96,6 +97,7 @@
   <div class="container d-flex flex-column justify-content-center h-75" id="main">
     <div class="container text-center mb-5" id="question_container">
       <h1 class="text-white" id="question">-</h1>
+      <canvas id="clockCanvas" width="300" height="300" style="margin: 20px auto;"></canvas>
     </div>
     <div class="container text-center mb-1" id="ans_container">
       <form class="row justify-content-center">
@@ -104,8 +106,9 @@
         </div>
       </form>
     </div>
-    <div class="container d-flex justify-content-center">
-      <span id="correct-ans" class="fs-4 text-center" style="opacity:0">-</span>
+    <div class="container">
+      <div id="correct-ans" class="fs-4 text-center" style="opacity:0">-</div>
+      <canvas id="clockCanvas-ans" width="300" height="300" style="margin: 20px auto; opacity:0"></canvas>
     </div>
   </div>
   <!-- Question, Input, Answer -->
@@ -138,6 +141,7 @@
         <select id="practice-type-select" class="form-select mw-100 align-middle" style="width: 300pt">
           <option value="sino">Sino-korean numbers</option>
           <option value="native">Native Korean numbers</option>
+          <option value="clock">Time</option>
         </select>
       </div>
 
@@ -154,6 +158,19 @@
         <input type="text" id="rangeSlider" name="range" data-slider-ticks="[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]"
           data-slider-ticks-labels='["일", "십", "백", "천", "만", "십만", "백만", "천만", "억", "십억", "백억"]'
           data-slider-value="[1,11]" data-slider-lock-to-ticks="true" data-slider-tooltip="hide">
+      </div>
+
+      <div class="row justify-content-center" id="timeSettingsDiv">
+        <span class="text-end text-body col-1 align-middle">Show clock</span>
+        <div class="col-auto form-check form-switch d-flex flex-row justify-content-center align-items-center p-0">
+          <input class="form-check-input col-2 m-0 " type="checkbox" role="switch" id="time-show-clock" checked>
+        </div>
+      </div>
+      <div class="row justify-content-center" id="timeSettings2Div">
+        <span class="text-end text-body col-4 align-middle">Use half past and minutes before</span>
+        <div class="col-auto form-check form-switch d-flex flex-row justify-content-center align-items-center p-0">
+          <input class="form-check-input col-2 m-0 " type="checkbox" role="switch" id="time-use-short" checked>
+        </div>
       </div>
 
       <hr/>

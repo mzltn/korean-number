@@ -1,6 +1,8 @@
 var practiceType = "sino";
 var answerMode = "number";
 var waiting = false;
+var clock = null;
+var clock_ans = null;
 
 var answer = "";
 
@@ -9,6 +11,9 @@ function randInt(a, b) {
 }
 function isNumberKoreanChecked() {
   return $("#number-korean").is(":checked");
+}
+function isClockChecked() {
+  return $("#time-show-clock").is(":checked");
 }
 function getSigfig() {
   return parseInt($("#sigfig").val());
@@ -23,6 +28,19 @@ function readQuestion() {
 function checkState() {
   practiceType = $("#practice-type-select")[0].value;
   $("#rangeSliderDiv,#sigFigDiv").css("display", (practiceType == 'sino') ? "flex" : "none");
+  $("#timeSettingsDiv,#timeSettings2Div").css("display", (practiceType == 'clock') ? "flex" : "none");
+  if (practiceType == 'clock' && isClockChecked()) {
+    if (isNumberKoreanChecked()) {
+      $("#question,#clockCanvas-ans").css("display", "none");
+      $("#clockCanvas").css("display", "block");
+    } else {
+      $("#question,#clockCanvas-ans").css("display", "block");
+      $("#clockCanvas").css("display", "none");
+    }
+  } else {
+    $("#question").css("display", "block");
+    $('#clockCanvas,#clockCanvas-ans').css("display", "none");
+  }
 
   if (isNumberKoreanChecked()) {
     answerMode = "korean";
@@ -39,7 +57,7 @@ function genQuestion() {
   var number = "";
   if (practiceType == "native") {
     number = randInt(0, 99);
-    hangul = number_to_native(number);
+    hangul = number_to_native(number, false);
     number = number.toString();
   } else if (practiceType == "sino") {
     var [lowBound, upperBound] = $("#rangeSlider").slider("getValue");
@@ -47,20 +65,35 @@ function genQuestion() {
     var sigfig = Math.min(parseInt(getSigfig()), mag); // 1 - 11
     number = (randInt(Math.pow(10, sigfig - 1), Math.pow(10, sigfig) - 1) * (Math.pow(10, mag - sigfig))).toString(); // 1 - 1e11
     hangul = number_to_sino(number);
+  } else if (practiceType == "clock") {
+    var number_hour = randInt(0, 23);
+    var number_minute = isClockChecked() ? randInt(0, 11) * 5 : randInt(0, 59);
+    hangul = number_to_time(number_hour, number_minute, $('#time-use-short').is(":checked"))
+
+    const time = new Date(2025, 1, 1, number_hour, number_minute);
+    //const options = { dayPeriod:'narrow', hour: 'numeric', minute: '2-digit' }
+    const options = { hour: 'numeric', minute: '2-digit', hour12:false }
+    number = time.toLocaleTimeString(undefined, options);
   }
   hangul = hangul.trim();
   var questionText = "";
   if (answerMode == "number") {
     questionText = hangul;
     answer = number;
+    if (practiceType == 'clock') {
+      clock_ans.drawClock(number_hour, number_minute);
+    }
   } else {
     questionText = number;
     answer = hangul;
+    if (practiceType == 'clock') {
+      clock.drawClock(number_hour, number_minute);
+    }
   }
   $("#question").text(questionText);
   $("#ans").val("").attr("disabled", false);
 
-  if (!isNumberKoreanChecked()) {
+  if (answerMode == "number") {
     readQuestion();
   }
 
@@ -75,7 +108,7 @@ function checkAns() {
     correct = true;
   } else {
     $("#correct-ans").removeClass("text-success").addClass("text-danger")
-    if (answerMode == "number") {
+    if ((answerMode == "number") && (practiceType == "native" || practiceType == "sino")) {
       $("#correct-ans").text(parseInt(answer).toLocaleString());
     } else {
       $("#correct-ans").text(answer);
@@ -83,20 +116,20 @@ function checkAns() {
   }
   if (correct) {
     waiting = true;
-    animateElement("#correct-ans", 1, () => {
+    animateElement("#correct-ans,#clockCanvas-ans", 1, () => {
       animateElement("#main", 0, () => {
         genQuestion();
         animateElement("#main", 1, () => {
           waiting = false;
         });
       });
-      animateElement("#correct-ans", 0);
+      animateElement("#correct-ans,#clockCanvas-ans", 0);
     });
   } else {
-    animateElement("#correct-ans", 1, () => {
+    animateElement("#correct-ans,#clockCanvas-ans", 1, () => {
       $("#correct-ans").focus();
     });
-    if (isNumberKoreanChecked()) {
+    if (isNumberKoreanChecked() && answerMode == "korean") {
       readAloud(answer);
     }
   }
@@ -104,6 +137,8 @@ function checkAns() {
 
 $(() => {
   $("#rangeSlider").slider().on('slideStop', genQuestion);
+  clock = new Clock(document.getElementById('clockCanvas'));
+  clock_ans = new Clock(document.getElementById('clockCanvas-ans'));
 
   $("#tempoSlider").slider().on('slideStop', readQuestion);
 
@@ -126,7 +161,7 @@ $(() => {
             waiting = false;
           });
         });
-        animateElement("#correct-ans", 0);
+        animateElement("#correct-ans,#clockCanvas-ans", 0);
       } else {
         checkAns();
       }
@@ -156,6 +191,8 @@ $(() => {
 
   $("#practice-type-select").change(checkState);
   $("#number-korean").change(checkState);
+  $("#time-show-clock").change(checkState);
+  $('#time-use-short').change(checkState);
 
   $("#ans").focus();
   
