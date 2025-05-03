@@ -74,6 +74,18 @@ function genQuestion() {
     //const options = { dayPeriod:'narrow', hour: 'numeric', minute: '2-digit' }
     const options = { hour: 'numeric', minute: '2-digit', hour12:false }
     number = time.toLocaleTimeString(undefined, options);
+  } else if (practiceType == "date") {
+    /* note: june and october are exceptions: 유월, 시월*/
+    const months = ["일월", "이월", "삼월", "사월", "오월", "유월", "칠월", "팔월", "구월", "시월", "십일월", "십이월"];
+
+    const months_len = [31,29,31,30,31,30,31,31,30,31,30,31];
+    var number_month = randInt(0, 11);
+    var number_day = randInt(1, months_len[number_month])
+
+    hangul = months[number_month] + " " + number_to_sino(number_day.toString()) + "일";
+    const date = new Date(Date.UTC(2025, number_month /* 0..11 */, number_day));
+    const options = { month: 'long', day: 'numeric' };
+    number = date.toLocaleDateString(undefined, options);
   }
   hangul = hangul.trim();
   var questionText = "";
