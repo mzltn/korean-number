@@ -1,5 +1,5 @@
-var practiceType = "sino";
-var answerMode = "number";
+var practiceType = "sino"; /* sino, native, date, clock */
+var answerMode = "number"; /* number, korean */
 var waiting = false;
 var clock = null;
 var clock_ans = null;
@@ -25,10 +25,25 @@ function readQuestion() {
   readAloud($("#question").text());
 }
 
+function focusAns() {
+  if ($("#ans").css("display") != "none") {
+    $("#ans").focus();
+  } else {
+    $("#btn_show_answer").focus();
+  }
+}
+
 function checkState() {
   practiceType = $("#practice-type-select")[0].value;
   $("#rangeSliderDiv,#sigFigDiv").css("display", (practiceType == 'sino') ? "flex" : "none");
   $("#timeSettingsDiv,#timeSettings2Div").css("display", (practiceType == 'clock') ? "flex" : "none");
+  if (['date','clock'].includes(practiceType)) {
+    $('#ans').css("display", "none");
+    $('#btn_show_answer').css("display", "inline");
+  } else {
+    $('#ans').css("display", "inline");
+    $('#btn_show_answer').css("display", "none");
+  }
   if (practiceType == 'clock' && isClockChecked()) {
     if (isNumberKoreanChecked()) {
       $("#question,#clockCanvas-ans").css("display", "none");
@@ -109,7 +124,7 @@ function genQuestion() {
     readQuestion();
   }
 
-  $("#ans").focus();
+  focusAns();
 }
 
 function checkAns() {
@@ -160,24 +175,32 @@ $(() => {
   });
   $("#sigfig").change(checkState);
 
+  const submitHandler = (e) => {
+    if ($("#correct-ans").hasClass("text-danger") && $("#correct-ans").css("opacity") != "0") {
+      waiting = true;
+      animateElement("#main", 0, () => {
+        genQuestion();
+        animateElement("#main", 1, () => {
+          waiting = false;
+        });
+      });
+      animateElement("#correct-ans,#clockCanvas-ans", 0);
+    } else {
+      checkAns();
+    }
+    return false;
+  }
+
+  $("#btn_show_answer").click((e) => {
+    submitHandler(e);
+  });
+
   $("#ans").keydown((e) => {
     if (waiting) return false;
 
     // Submit Handler
     if (e.key == "Enter") {
-      if ($("#correct-ans").hasClass("text-danger") && $("#correct-ans").css("opacity") != "0") {
-        waiting = true;
-        animateElement("#main", 0, () => {
-          genQuestion();
-          animateElement("#main", 1, () => {
-            waiting = false;
-          });
-        });
-        animateElement("#correct-ans,#clockCanvas-ans", 0);
-      } else {
-        checkAns();
-      }
-      return false;
+      submitHandler(e);
     }
 
     if ($("#correct-ans").css("opacity") != "0") {
@@ -206,7 +229,7 @@ $(() => {
   $("#time-show-clock").change(checkState);
   $('#time-use-short').change(checkState);
 
-  $("#ans").focus();
+  focusAns();
   
   startLoadingVoices();
   $('#tts-select').on("change", () => {

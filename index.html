@@ -100,9 +100,10 @@
       <canvas id="clockCanvas" width="300" height="300" style="margin: 20px auto;"></canvas>
     </div>
     <div class="container text-center mb-1" id="ans_container">
-      <form class="row justify-content-center">
+      <form class="row justify-content-center" onSubmit="return false">
         <div class="col-auto">
           <input type="number" class="form-control text-center fs-3" id="ans"></input>
+          <button class="p-1" style="display:none" id="btn_show_answer">Show answer</button>
         </div>
       </form>
     </div>
